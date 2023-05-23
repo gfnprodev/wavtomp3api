@@ -1,0 +1,70 @@
+version: "1.0"
+
+services:
+  apiservice_second:
+    container_name: "apiservice_second"
+    image: apiservice_second
+    build:
+      context: .
+    stop_signal: SIGINT
+    command: python main.py
+    restart: unless-stopped
+    env_file:
+      - ".env"
+    environment:
+      DB_HOST: database
+      MINIO_SERVER_ACCESS_KEY: minio
+      MINIO_SERVER_SECRET_KEY: Sdffas422
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - apinet
+    ports:
+      - "8000:8000"
+  database:
+    image: postgres:14-alpine
+    ports:
+      - "127.0.0.1:5433:5432"
+    restart: unless-stopped
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    env_file:
+      - ".env"
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: $DB_NAME
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    healthcheck:
+      test: "pg_isready -d ${DB_NAME} -U ${DB_USER}"
+      interval: 3s
+      retries: 5
+      timeout: 15s
+    networks:
+      - apinet
+  minio:
+    image: minio/minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=Sdffas422
+    networks: ["apinet"]
+    command: server /export
+    volumes:
+      - /mnt/hdd/minio/data:/export
+      - /mnt/hdd/minio/config:/root/.minio
+
+volumes:
+  pg_data: {}
+
+networks:
+  apinet:
+    driver: bridge
