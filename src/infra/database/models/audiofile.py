@@ -15,14 +15,12 @@ if TYPE_CHECKING:
 
 class Audiofile(BaseModel, TimestampMixin):
     id: Mapped[UUID] = mapped_column(sa.UUID(as_uuid=True), primary_key=True)
-    file_path: Mapped[str] = mapped_column(sa.VARCHAR)
     user_id: Mapped[UUID] = mapped_column(sa.ForeignKey("users.id", ondelete='CASCADE'))
     user: Mapped["User"] = relationship(back_populates='audiofiles')
 
     def to_dto(self, user: UserDTO | None = None) -> AudioFileDTO:
         return AudioFileDTO(
             id=self.id,
-            file_path=self.file_path,
             user_id=self.user_id,
             user=user,
             created_at=self.created_at,
